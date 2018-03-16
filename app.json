@@ -1,6 +1,6 @@
 {
-  "name": "🌟 Starbot",
-  "description": "Starbot is GitHub's trending open-source page, reincarnated as a Slack bot",
+  "name": "Diary bot",
+  "description": "Diary bot is a Slack bot that helps people to understand the concept of #diary channels",
   "repository": "https://github.com/mattcreager/starbot",
   "logo": "https://heroku-www-files.s3.amazonaws.com/starbot/starbot-icon.png",
   "success_url": "/",
