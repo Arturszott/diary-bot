@@ -1,54 +1,34 @@
+const http = require('http');
 
-'use strict'
+const dotenv = require('dotenv');
+dotenv.load()
 
-const express = require('express')
-const proxy = require('express-http-proxy')
-const bodyParser = require('body-parser')
-const _ = require('lodash')
-const config = require('./config')
-const commands = require('./commands')
-const helpCommand = require('./commands/help')
+// Initialize using verification token from environment variables
+const createSlackEventAdapter = require('@slack/events-api').createSlackEventAdapter;
+const slackEvents = createSlackEventAdapter(process.env.SLACK_VERIFICATION_TOKEN);
+const port = process.env.PORT || 3000;
 
-let bot = require('./bot')
+// Initialize an Express application
+const express = require('express');
+const bodyParser = require('body-parser');
+const app = express();
 
-let app = express()
+// You must use a body parser for JSON before mounting the adapter
+app.use(bodyParser.json());
 
-if (config('PROXY_URI')) {
-  app.use(proxy(config('PROXY_URI'), {
-    forwardPath: (req, res) => { return require('url').parse(req.url).path }
-  }))
-}
+// Mount the event handler on a route
+// NOTE: you must mount to a path that matches the Request URL that was configured earlier
+app.use('/slack/events', slackEvents.expressMiddleware());
 
-app.use(bodyParser.json())
-app.use(bodyParser.urlencoded({ extended: true }))
+// Attach listeners to events by Slack Event "type". See: https://api.slack.com/events/message.im
+slackEvents.on('message', (event)=> {
+  console.log(`Received a message event: user ${event.user} in channel ${event.channel} says ${event.text}`);
+});
 
-app.get('/', (req, res) => { res.send('\n 👋 🌍 \n') })
+// Handle errors (see `errorCodes` export)
+slackEvents.on('error', console.error);
 
-app.post('/commands/starbot', (req, res) => {
-  let payload = req.body
-
-  if (!payload || payload.token !== config('STARBOT_COMMAND_TOKEN')) {
-    let err = '✋  Star—what? An invalid slash token was provided\n' +
-              '   Is your Slack slash token correctly configured?'
-    console.log(err)
-    res.status(401).end(err)
-    return
-  }
-
-  let cmd = _.reduce(commands, (a, cmd) => {
-    return payload.text.match(cmd.pattern) ? cmd : a
-  }, helpCommand)
-
-  cmd.handler(payload, res)
-})
-
-app.listen(config('PORT'), (err) => {
-  if (err) throw err
-
-  console.log(`\n🚀  Starbot LIVES on PORT ${config('PORT')} 🚀`)
-
-  if (config('SLACK_TOKEN')) {
-    console.log(`🤖  beep boop: @starbot is real-time\n`)
-    bot.listen({ token: config('SLACK_TOKEN') })
-  }
-})
+// Start the express application
+http.createServer(app).listen(port, () => {
+  console.log(`server listening on port ${port}`);
+});
