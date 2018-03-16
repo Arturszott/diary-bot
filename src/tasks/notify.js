@@ -15,27 +15,14 @@ const msgDefaults = {
   response_type: 'in_channel',
   username: 'Starbot',
   icon_emoji: config('ICON_EMOJI')
-}
+};
 
-trending('javascript', (err, repos) => {
+let msg = _.defaults({ attachments: attachments }, msgDefaults)
+
+bot.sendWebhook({
+  text: 'test'
+}, (err, res) => {
   if (err) throw err
-
-  var attachments = repos.slice(0, 5).map((repo) => {
-    return {
-      title: `${repo.owner}/${repo.title} `,
-      title_link: repo.url,
-      text: `_${repo.description}_\n${repo.language} • ${repo.star}`,
-      mrkdwn_in: ['text', 'pretext']
-    }
-  })
-
-  let msg = _.defaults({ attachments: attachments }, msgDefaults)
-
-  bot.sendWebhook({
-    text: 'test'
-  }, (err, res) => {
-    if (err) throw err
-    console.log(msg);
-    console.log(`\n🚀  Starbot report delivered 🚀`)
-  })
+  console.log(msg);
+  console.log(`\n🚀  Starbot report delivered 🚀`)
 })
